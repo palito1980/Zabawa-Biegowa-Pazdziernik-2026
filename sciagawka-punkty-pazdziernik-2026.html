@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ściągawka — Jak liczyć punkty (październik 2026)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f0ea;--card:#fff;--text:#2c2520;--muted:#7a7068;
+    --accent:#e8553d;--accent-soft:#fef0ed;
+    --green:#2d8a56;--green-soft:#edf7f0;
+    --blue:#3068b8;--blue-soft:#edf2fb;
+    --red:#e8553d;--red-soft:#fdeae8;
+    --border:#e8e2da;--shadow:0 1px 3px rgba(44,37,32,.06),0 4px 12px rgba(44,37,32,.04);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-text-size-adjust:100%;padding:0 0 3rem}
+  header{background:var(--accent);color:#fff;padding:2rem 1.25rem 1.6rem;text-align:center}
+  header .emoji{font-size:1.8rem;margin-bottom:.4rem}
+  header h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.45rem;letter-spacing:-.02em;line-height:1.2}
+  header p{margin-top:.5rem;font-size:.88rem;opacity:.9}
+  .container{max-width:480px;margin:0 auto;padding:0 .85rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.15rem;margin-top:.85rem;box-shadow:var(--shadow)}
+  .card-title{display:flex;align-items:center;gap:8px;font-size:.95rem;font-weight:700;margin-bottom:.85rem}
+  .card-title .num{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;font-weight:700;font-size:.8rem;flex-shrink:0}
+  .block{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.6rem}
+  .block-label{padding:.5rem .85rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border)}
+  .block-content{padding:.65rem .85rem;font-size:.84rem;line-height:1.65}
+  .formula{font-weight:600;font-size:.9rem;margin-bottom:.35rem}
+  table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.82rem}
+  th{text-align:left;font-weight:600;padding:.45rem .6rem;background:var(--bg);border-bottom:2px solid var(--border)}
+  td{padding:.4rem .6rem;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:none}
+  .pts{font-weight:600;color:var(--accent);white-space:nowrap}
+  .pts-g{font-weight:600;color:var(--green)}
+  .pts-b{font-weight:600;color:var(--blue)}
+  .note-box{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem .8rem;margin-top:.6rem;font-size:.82rem;font-weight:500;line-height:1.55}
+  .note-blue{background:var(--blue-soft);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:.6rem .8rem;margin-top:.6rem;font-size:.82rem;font-weight:500;line-height:1.55}
+  .example-card{background:var(--bg);border-radius:10px;margin-top:.6rem;overflow:hidden}
+  .example-header{padding:.55rem .85rem;font-size:.78rem;font-weight:700;border-bottom:1px solid var(--border);background:var(--card)}
+  .example-rows{padding:.2rem .85rem .6rem}
+  .ex-row{display:flex;justify-content:space-between;align-items:baseline;font-size:.8rem;padding:.3rem 0;border-bottom:1px dashed var(--border)}
+  .ex-row:last-child{border-bottom:none}
+  .ex-day{color:var(--muted);flex-shrink:0;width:26px;font-weight:600}
+  .ex-desc{flex:1;padding:0 8px}
+  .ex-calc{font-size:.73rem;color:var(--muted);padding:0 4px}
+  .ex-pts{font-weight:600;flex-shrink:0}
+  .ex-total{display:flex;justify-content:space-between;font-size:.85rem;font-weight:700;padding:.6rem .85rem;border-top:2px solid var(--border);background:var(--card)}
+  .bonus-line{display:flex;justify-content:space-between;font-size:.79rem;padding:.2rem .85rem}
+  .bonus-line:first-of-type{padding-top:.45rem}
+  .summary{background:var(--green-soft);border:1px solid #c6e4cf;border-radius:12px;padding:1rem 1.1rem;margin-top:.85rem}
+  .summary h3{font-size:.88rem;font-weight:700;color:var(--green);margin-bottom:.6rem}
+  .summary ul{list-style:none;font-size:.83rem;line-height:1.8}
+  .summary li::before{content:"✓ ";color:var(--green);font-weight:700}
+  footer{text-align:center;padding:1.5rem 1rem .5rem;font-size:.75rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="emoji">📋</div>
+  <h1>Jak liczyć punkty?</h1>
+  <p>Ściągawka — trzymaj pod ręką! · październik 2026</p>
+</header>
+<div class="container">
+
+<!-- KROK 1 -->
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--accent-soft);color:var(--accent)">1</div>
+    Punkty za dzień
+  </div>
+
+  <div class="block">
+    <div class="block-label" style="background:#fff5f3;color:var(--accent)">🏃 Bieganie</div>
+    <div class="block-content">
+      <div class="formula">20 pkt bonus + 5 pkt × km</div>
+      Min. 3 km. Km ze wszystkich biegów się sumują. Limit 75 pkt/dzień (15 km).
+      <table style="margin-top:.5rem">
+        <tr><td>3 km</td><td class="pts">35 pkt</td></tr>
+        <tr><td>8 km</td><td class="pts">60 pkt</td></tr>
+        <tr><td>15 km</td><td class="pts">95 pkt (limit)</td></tr>
+        <tr><td>20 km</td><td class="pts">95 pkt (limit)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label" style="background:var(--blue-soft);color:var(--blue)">🚶🚴🏊 Spacer / Rower / Pływanie — przez kilometry</div>
+    <div class="block-content">
+      <div class="formula">20 pkt bonus + 5 pkt × (km × mnożnik)</div>
+      <table style="margin-top:.4rem">
+        <tr><th>Aktywność</th><th>Mnożnik</th><th>Minimum</th><th>Limit dzienny</th></tr>
+        <tr><td>Spacer</td><td>×0.5</td><td>3 km</td><td class="pts">75 pkt</td></tr>
+        <tr><td>Rower</td><td>×0.3</td><td>8 km</td><td class="pts">75 pkt</td></tr>
+        <tr><td>Pływanie</td><td>×5.0</td><td>800 m</td><td class="pts">75 pkt</td></tr>
+      </table>
+      <div style="font-size:.73rem;color:var(--muted);margin-top:.4rem">Spacer 6 km: 20 + (6 × 0.5 × 5) = 35 pkt · Rower 25 km: 20 + (25 × 0.3 × 5) = 57,5 pkt</div>
+      <div style="font-size:.78rem;color:var(--red);font-weight:600;margin-top:.35rem">⚠️ Minima: spacer 3 km · rower 8 km · pływanie 800 m (5% tolerancji GPS). Rowery elektryczne się nie liczą.</div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label" style="background:var(--green-soft);color:var(--green)">💪 Siłownia / Joga / Pilates / Trening — przez czas</div>
+    <div class="block-content">
+      <div class="formula">20 pkt bonus + punkty za czas</div>
+      <table style="margin-top:.4rem">
+        <tr><th>Czas</th><th>Punkty</th><th>Łącznie</th></tr>
+        <tr><td>50 min i więcej</td><td class="pts">40 pkt</td><td style="font-weight:700;color:var(--green)">60 pkt</td></tr>
+        <tr><td>30–49 min</td><td class="pts">25 pkt</td><td style="font-weight:700;color:var(--green)">45 pkt</td></tr>
+        <tr><td>poniżej 30 min</td><td class="pts">0 pkt</td><td style="color:var(--muted)">nie liczy</td></tr>
+      </table>
+      <p style="font-size:.73rem;color:var(--muted);margin-top:.4rem">Dwa progi czasowe. Maks <strong>1 trening czasowy dziennie</strong> (najdłuższy).</p>
+    </div>
+  </div>
+
+  <div class="note-box">
+    🔄 Można łączyć tego samego dnia! Bieg + siłownia, rower + joga itp. Aktywności się sumują (bez sufitu dnia).<br>
+    <strong>Bonus dzienny +20 pkt — zawsze tylko raz, poza limitem 75.</strong><br>
+    ⏰ Zrzut wrzucasz <strong>w dniu wykonania</strong> (aktywność z niedzieli — najpóźniej do 10:00 w poniedziałek). Liczymy 5 najlepszych dni — w <strong>Tygodniu 1 (1–4.10)</strong> liczą się 4 dni (cel 4).
+  </div>
+</div>
+
+<!-- KROK 2 -->
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--green-soft);color:var(--green)">2</div>
+    Bonus i kara tygodniowa
+  </div>
+  <div class="block">
+    <div class="block-label" style="background:#fff5f3;color:var(--accent)">🏃 Bonus biegowy — jedyny bonus indywidualny</div>
+    <div class="block-content">
+      <table>
+        <tr><td>2 dni biegania</td><td class="pts">+10 pkt</td></tr>
+        <tr><td>3 dni biegania</td><td class="pts">+25 pkt</td></tr>
+        <tr><td>4+ dni biegania</td><td class="pts">+50 pkt</td></tr>
+      </table>
+      <p style="font-size:.73rem;color:var(--muted);margin-top:.35rem">Tylko za dni z biegiem (min. 3 km). Spacer, rower i pływanie się nie liczą do tego bonusu.</p>
+    </div>
+  </div>
+  <div class="block" style="margin-top:.6rem">
+    <div class="block-label" style="background:#fdeae8;color:var(--red)">➖ Kara za brak aktywności</div>
+    <div class="block-content">
+      <p style="font-size:.8rem;margin-bottom:.4rem">Cel: <strong>5 dni w tygodniu</strong>. Za każdy brakujący dzień poniżej 5: <strong>−20 pkt</strong>.</p>
+      <table>
+        <tr><td>5–7 dni</td><td class="pts-g">0 (bez kary)</td></tr>
+        <tr><td>4 dni</td><td style="color:var(--red);font-weight:700">−20</td></tr>
+        <tr><td>3 dni</td><td style="color:var(--red);font-weight:700">−40</td></tr>
+        <tr><td>2 dni</td><td style="color:var(--red);font-weight:700">−60</td></tr>
+        <tr><td>1 dzień</td><td style="color:var(--red);font-weight:700">−80</td></tr>
+        <tr><td>0 dni</td><td style="color:var(--red);font-weight:700">−100</td></tr>
+      </table>
+      <p style="font-size:.73rem;color:var(--muted);margin-top:.35rem">Podłoga na 0 — tydzień nie schodzi poniżej zera. Kara naliczana przy zamknięciu tygodnia. Dwa dni wolne zawsze darmowe.</p>
+    </div>
+  </div>
+</div>
+
+<!-- KROK 3 -->
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--blue-soft);color:var(--blue)">3</div>
+    Bonus drużynowy (raz w tygodniu)
+  </div>
+  <div class="block">
+    <div class="block-label" style="background:var(--blue-soft);color:var(--blue)">👥 Aktywne dni drużyny (max 5/os) · pula 600 pkt</div>
+    <div class="block-content">
+      <table>
+        <tr><td>80% i więcej</td><td class="pts-b">600 pkt</td></tr>
+        <tr><td>ok. 70%</td><td class="pts-b">450 pkt</td></tr>
+        <tr><td>ok. 60%</td><td class="pts-b">300 pkt</td></tr>
+        <tr><td>ok. 45%</td><td class="pts-b">150 pkt</td></tr>
+      </table>
+      <p style="font-size:.73rem;color:var(--muted);margin-top:.35rem">Komplet = liczba osób × 5 dni. Dzień wolny prawie nic nie kosztuje drużynie.</p>
+    </div>
+  </div>
+</div>
+
+<!-- KROK 4: WERYFIKACJA -->
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--accent-soft);color:var(--accent)">4</div>
+    Weryfikacja (październik)
+  </div>
+  <div class="note-blue">
+    🗺️ <strong>Mapa trasy</strong> — obowiązkowa dla aktywności na zewnątrz (bieg, spacer, rower). Bez mapy = nie uznane.<br>
+    🏃 <strong>Bieżnia</strong> — potrzebne <strong>dwa dowody naraz</strong>: zdjęcie dystansu z wyświetlacza + zapis z zegarka/opaski (czas i tętno). Brak któregoś = <strong>nie uznane</strong> (nie ma już zamiany na czasówkę).<br>
+    🚴 <strong>Rower na zewnątrz</strong> — zdjęcie roweru <strong>po zatrzymaniu, w bezpiecznym miejscu</strong> (dowód, że nie elektryczny). <strong>Nie rób zdjęcia w trakcie jazdy.</strong><br>
+    🚲 <strong>Rower stacjonarny</strong> — liczony jak zwykły rower (×0,3, min 8 km). Potrzebne <strong>dwa dowody</strong>: dystans z wyświetlacza + zapis z zegarka/opaski (czas i tętno). Brak = nie uznane.<br>
+    🏷️ <strong>Poprawne oznaczenie</strong> — pływanie jako pływanie, siłownia jako siłownia itd. Źle oznaczone = nie uznane.<br>
+    💼 <strong>Tylko sport w czasie wolnym</strong> — ruch w ramach obowiązków służbowych się nie liczy (spacer w przerwie — tak).<br>
+    🔒 <strong>Prywatność</strong> — na publicznej tablicy widać tylko nick, drużynę i wynik; dowody (zrzuty, mapy) zostają na grupie WhatsApp.
+  </div>
+</div>
+
+<!-- PRZYKŁADY -->
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--accent-soft);color:var(--accent)">🏃</div>
+    Przykład: biegacz
+  </div>
+  <div class="example-card">
+    <div class="example-header">📅 Tydzień</div>
+    <div class="example-rows">
+      <div class="ex-row"><span class="ex-day">Pon</span><span class="ex-desc">Bieg 7 km</span><span class="ex-calc">20+35</span><span class="ex-pts pts">55 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Śr</span><span class="ex-desc">Bieg 5 km</span><span class="ex-calc">20+25</span><span class="ex-pts pts">45 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Pt</span><span class="ex-desc">Bieg 10 km</span><span class="ex-calc">20+50</span><span class="ex-pts pts">70 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Sob</span><span class="ex-desc">Siłownia 60 min</span><span class="ex-calc">20+40</span><span class="ex-pts pts">60 pkt</span></div>
+    </div>
+    <div class="bonus-line"><span>Bonus biegowy (3 dni)</span><span class="pts">+25 pkt</span></div>
+    <div class="ex-total"><span>Razem tydzień</span><span class="pts" style="font-size:1.1rem">255 pkt</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--blue-soft);color:var(--blue)">🚴🏊</div>
+    Przykład: rower + pływanie
+  </div>
+  <div class="example-card">
+    <div class="example-header">📅 Tydzień</div>
+    <div class="example-rows">
+      <div class="ex-row"><span class="ex-day">Pon</span><span class="ex-desc">Spacer 6 km</span><span class="ex-calc">20+(6×0.5×5)</span><span class="ex-pts pts">35 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Śr</span><span class="ex-desc">Pływanie 1 km</span><span class="ex-calc">20+(1×5×5)</span><span class="ex-pts pts">45 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Pt</span><span class="ex-desc">Siłownia 70 min</span><span class="ex-calc">20+40</span><span class="ex-pts pts">60 pkt</span></div>
+      <div class="ex-row"><span class="ex-day">Nd</span><span class="ex-desc">Joga 45 min</span><span class="ex-calc">20+25</span><span class="ex-pts pts">45 pkt</span></div>
+    </div>
+    <div class="bonus-line"><span>Bonus biegowy</span><span style="color:var(--muted)">brak</span></div>
+    <div class="ex-total"><span>Razem tydzień</span><span class="pts" style="font-size:1.1rem">185 pkt</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">
+    <div class="num" style="background:var(--green-soft);color:var(--green)">🔄</div>
+    Przykład: bieg + siłownia tego dnia
+  </div>
+  <div class="example-card">
+    <div class="example-header">📅 Jeden dzień: bieg 8 km + siłownia 60 min</div>
+    <div class="example-rows">
+      <div class="ex-row"><span class="ex-desc">Bonus dzienny (raz!)</span><span class="ex-pts pts">20 pkt</span></div>
+      <div class="ex-row"><span class="ex-desc">Bieg 8 km × 5</span><span class="ex-pts pts">+40 pkt</span></div>
+      <div class="ex-row"><span class="ex-desc">Siłownia 60 min (50+ min)</span><span class="ex-pts pts">+40 pkt</span></div>
+    </div>
+    <div class="ex-total"><span>Razem dzień</span><span class="pts" style="font-size:1.1rem">100 pkt</span></div>
+  </div>
+</div>
+
+<div class="summary">
+  <h3>✓ Najważniejsze zasady</h3>
+  <ul>
+    <li>Aktywność liczy się <strong>w dniu jej wykonania</strong> (niedziela — do 10:00 w poniedziałek)</li>
+    <li>Bonus dzienny <strong>+20 pkt</strong> — raz dziennie, poza limitem 75</li>
+    <li>Każda aktywność ma <strong>limit 75 pkt/dzień</strong> (bieg 15 km / rower 50 km / spacer 30 km / pływanie 3 km)</li>
+    <li>Minima: spacer 3 km · <strong>rower 8 km · pływanie 800 m</strong> (5% tolerancji GPS)</li>
+    <li>Trening czasowy → <strong>25 pkt (30–49 min) lub 40 pkt (50+ min)</strong>, maks 1/dzień</li>
+    <li>Rowery elektryczne się nie liczą; aktywności na zewnątrz wymagają <strong>mapy trasy</strong></li>
+    <li>Liczymy <strong>5 najlepszych dni</strong> (Tydzień 1: 4 dni) — 2 dni wolne nie szkodzą</li>
+    <li>Za mniej niż 5 aktywnych dni: <strong>−20 pkt za każdy brakujący dzień</strong> (w Tygodniu 1 cel to 4; podłoga na 0)</li>
+    <li><strong>DSQ</strong> — 2 lub mniej aktywnych dni w tygodniu = wylot z drużyny do końca miesiąca</li>
+    <li><strong>Bonus za regularność został usunięty</strong> — zostaje tylko bonus biegowy (liczony z całego tygodnia)</li>
+    <li>Bonus drużynowy raz w tygodniu (pula 600) — odpoczynek prawie nic nie kosztuje</li>
+  </ul>
+</div>
+
+<footer>Ściągawka do regulaminu · Aktywny październik 2026 · zasady</footer>
+</div>
+</body>
+</html>
