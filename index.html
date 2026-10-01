@@ -9,7 +9,7 @@
 /* ── Jesienny motyw (październik): złote niebo → bursztyn → dynia. Wszystko CSS/SVG, zero obrazków. ── */
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#3a2e22;padding-bottom:4rem;position:relative;min-height:100vh;
   background:linear-gradient(180deg,#dbe0d6 0%,#efe2c4 34%,#eccb92 64%,#e3ad6a 100%);background-attachment:fixed}
-/* Scena w tle — góry, słońce, morze — jeden lekki inline-SVG, przyklejony, za treścią */
+/* Scena w tle — jesienne pagórki, słońce, drzewa — jeden lekki inline-SVG, przyklejony, za treścią */
 .bg-scene{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
 .bg-scene svg{position:absolute;bottom:0;left:0;width:100%;height:auto;min-height:340px}
 /* Delikatne słońce w rogu */
@@ -293,6 +293,13 @@ function renderApp(payload){
   const TEAM_B=members.filter(m=>m.team==='B');
   const tA=calcTeam(TEAM_A,state);
   const tB=calcTeam(TEAM_B,state);
+  // Zawodnicy niestowarzyszeni (poza konkurencją): w tabeli głównej, bez wpływu na drużyny.
+  // Wynik = tylko punkty dodatnie (rawTotal), bez kary i bez udziału w bonusie drużynowym.
+  const INDEP=members.filter(m=>m.indep);
+  const indepResults=INDEP.map(m=>{
+    const r=calcMember(m.id,state,false);
+    return {...m,...r,total:r.rawTotal,penalty:0,penaltyApplied:0,missDays:0,teamBonusShare:0,dsq:false,indep:true};
+  });
 
   const lockedA=lockedWeeks.reduce((s,w)=>s+(w.teamA&&w.teamA.grandTotal||0),0);
   const lockedB=lockedWeeks.reduce((s,w)=>s+(w.teamB&&w.teamB.grandTotal||0),0);
@@ -305,19 +312,24 @@ function renderApp(payload){
   const cfgA=teamConfig.A||{};const cfgB=teamConfig.B||{};
   const tnA=cfgA.name||'Drużyna A';const tnB=cfgB.name||'Drużyna B';
   const logoA=cfgA.logoImg?'<img src="'+cfgA.logoImg+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;vertical-align:middle">':'<span style="font-size:1.6rem">'+(cfgA.logo||'🔴')+'</span>';
-  const logoB=cfgB.logoImg?'<img src="'+cfgB.logoImg+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;vertical-align:middle">':'<span style="font-size:1.6rem">'+(cfgB.logo||'🔵')+'</span>';
+  const logoB=cfgB.logoImg?'<img src="'+cfgB.logoImg+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;vertical-align:middle">':'<span style="font-size:1.6rem">'+(cfgB.logo||'🟢')+'</span>';
   const updDate=lastUpdated?new Date(lastUpdated).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
   const refreshDate=now.toLocaleString('pl-PL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
   let wn, weekRange='';
-  if(challengeStart){
+  const fmtD=d=>d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'});
+  const fmtDY=d=>d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const _iso=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const _wd=WEEK_DEFS.find(x=>_iso>=x.start&&_iso<=x.end);
+  if(_wd){                           // kalendarz październikowy (§1.7) — Tydzień 1 skrócony
+    wn=_wd.n;
+    weekRange=fmtD(new Date(_wd.start+' 12:00'))+' – '+fmtDY(new Date(_wd.end+' 12:00'));
+  }else if(challengeStart){          // fallback: 7-dniowe tygodnie od startu
     const cs=new Date(challengeStart+' 12:00');
     const daysDiff=Math.floor((now-cs)/(24*60*60*1000));
     wn=Math.max(1,Math.floor(daysDiff/7)+1);
     const wkStart=new Date(cs.getTime()+(wn-1)*7*24*60*60*1000);
     const wkEnd=new Date(wkStart.getTime()+6*24*60*60*1000);
-    const fmtD=d=>d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'});
-    const fmtDY=d=>d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
     weekRange=fmtD(wkStart)+' – '+fmtDY(wkEnd);
   }else{
     wn=Math.ceil((now-new Date(now.getFullYear(),0,1))/604800000);
@@ -435,14 +447,16 @@ function renderApp(payload){
   // Każdy dostaje wynik indywidualny + równy udział w bonusie drużynowym.
   // DSQ: pokazani z plakietką, bez udziału w bonusie, na swojej pozycji punktowej.
   function unifiedRow(m,pos){
+    const indep=!!m.indep;
     const isA=m.team==='A';
-    const color=isA?'#c8392b':'#1a5fa8';
-    const soft=isA?'#fdecea':'#e8f0fb';
-    const teamName=isA?tnA:tnB;
-    const share=m.teamBonusShare||0;
-    const finalPts=m.total+(m.dsq?0:share);           // wynik pokazywany w rankingu
-    const medal=['🥇','🥈','🥉'][pos]||(pos+1);
+    const color=indep?'#8a6a3a':(isA?'#c8392b':'#3f7a44');
+    const soft=indep?'#f3ece0':(isA?'#fdecea':'#eef4e7');
+    const teamName=indep?'Poza konkurencją':(isA?tnA:tnB);
+    const share=indep?0:(m.teamBonusShare||0);
+    const finalPts=indep?m.total:m.total+(m.dsq?0:share);           // wynik pokazywany w rankingu
+    const medal=indep?'•':(['🥇','🥈','🥉'][pos]||(pos+1));
     const dsqBadge=m.dsq?'<span style="background:#6b7280;color:#fff;font-size:.6rem;font-weight:800;letter-spacing:.05em;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:middle">DSQ</span>':'';
+    const indepBadge=indep?'<span style="background:#8a6a3a;color:#fff;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:middle">POZA KONKURENCJĄ</span>':'';
     // pasek udziału bonusu
     const shareLine=(!m.dsq&&share>0)?'<span>Bonus drużynowy: <b style="color:'+color+'">+'+share+'</b></span>':'';
     const breakdown=m.dayBreakdown||[];
@@ -461,10 +475,10 @@ function renderApp(payload){
     return '<details style="background:#fff;border-radius:12px;overflow:hidden;margin-bottom:.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid '+color+';'+opacity+'">'
       +'<summary style="display:block;cursor:pointer;list-style:none;padding:.75rem;-webkit-tap-highlight-color:rgba(0,0,0,.04)">'
       +'<div style="display:flex;align-items:center;gap:8px">'
-      +'<span style="font-weight:900;font-size:1rem;min-width:26px;text-align:center;flex-shrink:0;color:'+(pos<3?color:'#b8b8b8')+'">'+medal+'</span>'
+      +'<span style="font-weight:900;font-size:1rem;min-width:26px;text-align:center;flex-shrink:0;color:'+((!indep&&pos<3)?color:'#b8b8b8')+'">'+medal+'</span>'
       +'<span style="flex:1;min-width:0">'
-      +'<span style="font-weight:700;font-size:.95rem">'+esc(m.name)+'</span>'+dsqBadge
-      +'<span style="display:block;font-size:.64rem;color:'+color+';font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">'+esc(teamName)+(m.dsq?' · poza drużyną':'')+'</span>'
+      +'<span style="font-weight:700;font-size:.95rem">'+esc(m.name)+'</span>'+dsqBadge+indepBadge
+      +'<span style="display:block;font-size:.64rem;color:'+color+';font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">'+esc(teamName)+(m.dsq?' · poza drużyną':'')+(indep?' · nie liczy się do drużyny':'')+'</span>'
       +'</span>'
       +'<span style="font-size:.72rem;color:#999;white-space:nowrap;flex-shrink:0;margin-right:4px">'+m.activeDays+'d · '+m.totalKm+'km</span>'
       +'<span style="font-family:Georgia,serif;font-weight:800;font-size:1.15rem;color:'+color+';min-width:50px;text-align:right;flex-shrink:0">'+finalPts+'</span>'
@@ -484,12 +498,13 @@ function renderApp(payload){
 
   function unifiedTable(){
     // złóż wszystkich zawodników z obu drużyn, policz wynik finalny (indywid. + udział bonusu)
-    const all=tA.results.concat(tB.results).map(m=>({
-      ...m, finalPts:m.total+(m.dsq?0:(m.teamBonusShare||0))
+    const all=tA.results.concat(tB.results).concat(indepResults).map(m=>({
+      ...m, finalPts:m.indep?m.total:m.total+(m.dsq?0:(m.teamBonusShare||0))
     }));
     all.sort((a,b)=> b.finalPts-a.finalPts || b.total-a.total);
     let rows='';
-    all.forEach((m,i)=>{ rows+=unifiedRow(m,i); });
+    let compRank=0;                       // medale/pozycje tylko dla zawodników w konkurencji
+    all.forEach((m)=>{ rows+=unifiedRow(m, m.indep?-1:compRank); if(!m.indep)compRank++; });
     // górny pasek Grupa 1 vs Grupa 2
     const bar='<div style="display:flex;gap:8px;margin-bottom:.75rem">'
       +'<div style="flex:1;background:#c8392b;color:#fff;border-radius:10px;padding:.6rem .75rem;text-align:center">'
@@ -497,7 +512,7 @@ function renderApp(payload){
       +'<div style="font-weight:900;font-size:1.35rem;margin-top:2px">'+tA.weekTotal+'</div>'
       +'<div style="font-size:.6rem;opacity:.8">bonus +'+tA.teamBonusTotal+(tA.dsqCount?' · DSQ '+tA.dsqCount:'')+'</div></div>'
       +'<div style="display:flex;align-items:center;font-weight:900;color:#999;font-size:.8rem">VS</div>'
-      +'<div style="flex:1;background:#1a5fa8;color:#fff;border-radius:10px;padding:.6rem .75rem;text-align:center">'
+      +'<div style="flex:1;background:#3f7a44;color:#fff;border-radius:10px;padding:.6rem .75rem;text-align:center">'
       +'<div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;opacity:.85">'+esc(tnB)+'</div>'
       +'<div style="font-weight:900;font-size:1.35rem;margin-top:2px">'+tB.weekTotal+'</div>'
       +'<div style="font-size:.6rem;opacity:.8">bonus +'+tB.teamBonusTotal+(tB.dsqCount?' · DSQ '+tB.dsqCount:'')+'</div></div>'
@@ -514,7 +529,7 @@ function renderApp(payload){
     let rows='';
     sorted.forEach((m,i)=>{
       const medal=['🥇','🥈','🥉'][i]||(i+1)+'.';
-      const bg=m.team==='A'?(i%2===0?'#fff':'#fdecea'):(i%2===0?'#fff':'#e8f0fb');
+      const bg=m.team==='A'?(i%2===0?'#fff':'#fdecea'):(i%2===0?'#fff':'#eef4e7');
       rows+='<div style="display:flex;align-items:center;gap:6px;padding:.5rem .75rem;border-bottom:1px solid #f5f0ea;background:'+bg+'">'
         +'<span style="min-width:26px;font-size:.85rem;text-align:center">'+medal+'</span>'
         +'<span style="flex:1;font-size:.85rem;font-weight:600">'+esc(m.name)+'</span>'
@@ -586,7 +601,7 @@ function renderApp(payload){
     const pctB=actB.length+'/'+tB.results.length+' z '+esc(tnB);
     txt+='<span style="color:#999">'+pctA+', '+pctB+'.</span> ';
     if(actA.length===tA.results.length)txt+='<strong style="color:#c8392b">'+esc(tnA)+' 100% aktywna! 💯</strong> ';
-    if(actB.length===tB.results.length)txt+='<strong style="color:#1a5fa8">'+esc(tnB)+' 100% aktywna! 💯</strong> ';
+    if(actB.length===tB.results.length)txt+='<strong style="color:#3f7a44">'+esc(tnB)+' 100% aktywna! 💯</strong> ';
     txt+='Najlepiej: <strong>'+esc(top.m.name)+'</strong> ('+topTm+') — '+Math.round(top.pts)+' pkt. ';
     if(runners.length>0&&runners[0].km>=5)txt+='Najdłuższy bieg: <strong>'+esc(runners[0].m.name)+'</strong> '+runners[0].km+' km. ';
     if(withPts.length>1){
@@ -594,7 +609,7 @@ function renderApp(payload){
       const s2tm=tA.results.includes(second.m)?esc(tnA):esc(tnB);
       txt+='Tuż za nim(nią) '+esc(second.m.name)+' ('+s2tm+') z '+Math.round(second.pts)+' pkt.';
     }
-    const dayColor=actA.length>actB.length?'#c8392b':actB.length>actA.length?'#1a5fa8':'#7a7068';
+    const dayColor=actA.length>actB.length?'#c8392b':actB.length>actA.length?'#3f7a44':'#7a7068';
     return '<div class="chr-day">'
       +'<div class="chr-dn" style="color:'+dayColor+'">'+dayName+'</div>'
       +'<div class="chr-txt">'+txt+'</div></div>';
@@ -619,7 +634,7 @@ function renderApp(payload){
     +'<div style="font-size:.6rem;color:#999">🏃 Km łącznie</div><div style="font-weight:800;font-size:1rem">'+totalKmAll+'</div></div>'
     +'<div style="flex:1;min-width:90px;padding:.65rem .75rem;text-align:center">'
     +'<div style="font-size:.6rem;color:#999">📅 Prow. dni</div>'
-    +'<div style="font-weight:800;font-size:.85rem"><span style="color:#c8392b">A:'+leadA+'</span> <span style="color:#999">·</span> <span style="color:#1a5fa8">B:'+leadB+'</span></div></div>'
+    +'<div style="font-weight:800;font-size:.85rem"><span style="color:#c8392b">A:'+leadA+'</span> <span style="color:#999">·</span> <span style="color:#3f7a44">B:'+leadB+'</span></div></div>'
     +'</div>'
     +'<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:.85rem">'
     +Array.from({length:7},(_,i)=>chrDayHtml(i)).join('')
@@ -640,13 +655,13 @@ function renderApp(payload){
       const wA=Math.max(Math.round(rd.cumA/raceMax*100),3);
       const wB=Math.max(Math.round(rd.cumB/raceMax*100),3);
       const lead=rd.cumA>rd.cumB?esc(tnA)+' +' +(rd.cumA-rd.cumB)+' pkt':rd.cumA<rd.cumB?esc(tnB)+' +'+(rd.cumB-rd.cumA)+' pkt':'Remis!';
-      const lc=rd.cumA>rd.cumB?'#c8392b':rd.cumA<rd.cumB?'#1a5fa8':'#7a7068';
+      const lc=rd.cumA>rd.cumB?'#c8392b':rd.cumA<rd.cumB?'#3f7a44':'#7a7068';
       return '<div class="race-day">'
         +'<div class="race-day-label">'+DAY_FULL[rd.di]
         +'<span style="font-weight:400;color:#999;margin:0 6px">+'+rd.addA+' vs +'+rd.addB+'</span>'
         +'<span style="color:'+lc+';font-style:italic">'+lead+'</span></div>'
         +'<div class="race-bar" style="background:#c8392b;width:'+wA+'%">'+esc(tnA)+' · '+rd.cumA+'</div>'
-        +'<div class="race-bar" style="background:#1a5fa8;width:'+wB+'%">'+esc(tnB)+' · '+rd.cumB+'</div>'
+        +'<div class="race-bar" style="background:#3f7a44;width:'+wB+'%">'+esc(tnB)+' · '+rd.cumB+'</div>'
         +'</div>';
     }).join('')
     +'</div>';
@@ -706,7 +721,7 @@ function renderApp(payload){
     +'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr;gap:.75rem">'
     +teamAwards(tA,'#c8392b',tnA,logoA)
-    +teamAwards(tB,'#1a5fa8',tnB,logoB)
+    +teamAwards(tB,'#3f7a44',tnB,logoB)
     +'</div>'
     +'</div>';
 
@@ -722,7 +737,7 @@ function renderApp(payload){
     +'<div class="sc-name">'+esc(tnA)+'</div></div></div>'
     +'<div class="sc-vs">VS</div>'
     +'<div class="sc" style="justify-content:flex-end;text-align:right">'+logoB
-    +'<div><div class="sc-pts" style="color:#3068b8">'+tB.grandTotal+' pkt</div>'
+    +'<div><div class="sc-pts" style="color:#3f7a44">'+tB.grandTotal+' pkt</div>'
     +'<div class="sc-name">'+esc(tnB)+'</div></div></div>'
     +'<div class="live-indicator" id="liveIndicator" onclick="manualRefresh()">🟢 NA ŻYWO · odświeżono '+refreshDate+' (kliknij aby odświeżyć)</div>';
 
@@ -744,12 +759,12 @@ function renderApp(payload){
     +'</div>'
     +'<div class="tab-pane active" id="px1">'
     +unifiedTable()
-    +'<div style="text-align:center;font-size:.7rem;color:#bbb;padding:.5rem">Aktywny wrzesień 2026 · widok na żywo, tylko do odczytu</div>'
+    +'<div style="text-align:center;font-size:.7rem;color:#bbb;padding:.5rem">Aktywny październik 2026 · widok na żywo, tylko do odczytu</div>'
     +'</div>'
     +'<div class="tab-pane" id="px2">'
     +'<div class="teams-grid">'
     +teamSection('A',tA,'#c8392b','#fdecea',logoA,tnA)
-    +teamSection('B',tB,'#1a5fa8','#e8f0fb',logoB,tnB)
+    +teamSection('B',tB,'#3f7a44','#eef4e7',logoB,tnB)
     +'</div></div>'
     +'<div class="tab-pane" id="px3"><div style="padding:.75rem">'+statsHtml+'</div></div>'
     +'<div class="tab-pane" id="px4">'+chronicleHtml+raceHtml+'</div>'
